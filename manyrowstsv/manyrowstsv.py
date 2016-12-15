@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # coding:utf-8
 
 import signal
@@ -23,12 +24,13 @@ def do_exit(sig, stack):
 
 
 def make_manyrows(
-        fpath,
+        filename,
         rows,
         dt_iso_max,
         dt_iso_min,
         date_iso_max,
         date_iso_min):
+    fpath = "/tmp/" + filename
     dt_iso_max = datetime.datetime.strptime(
         dt_iso_max, u'%Y/%m/%d %H:%M:%S')
     dt_iso_min = datetime.datetime.strptime(
@@ -95,8 +97,8 @@ def make_manyrows(
             # 1000000を越えるとStringIOを解放する。
         fd.write(output.getvalue())
         shutil.move(temp, fpath)
-    except SignalException:
-        print 'Exiting'
+    except Exception as e1:
+        print e1
         if os.path.exists(temp):
             os.remove(temp)
     finally:
@@ -107,27 +109,30 @@ def make_manyrows(
 @click.command()
 @click.argument('rows', type=int, default=1000000)
 @click.option(
-    '-f', '--fpath',
-    default="/bin/kadai_v1.tsv",
+    '-f', '--filename',
+    default="kadai_v1.tsv",
     )
 @click.option('-D', '--dt-iso-max', default=u"2016/12/31 00:00:00")
 @click.option('-d', '--dt-iso-min', default=u"2016/12/1 00:00:00")
 @click.option('-T', '--date-iso-max', default=u"2016/12/31")
 @click.option('-t', '--date-iso-min', default=u"2016/12/1")
-def cmd(rows, fpath, dt_iso_max, dt_iso_min,
+def cmd(rows, filename, dt_iso_max, dt_iso_min,
         date_iso_max, date_iso_min):
     s = datetime.datetime.now()
     print s + datetime.timedelta(0, 0, 0, 0, 0, 9)
     signal.signal(signal.SIGINT, do_exit)
     signal.signal(signal.SIGHUP, do_exit)
     signal.signal(signal.SIGTERM, do_exit)
-
-    make_manyrows(
-        fpath, rows, dt_iso_max, dt_iso_min,
-        date_iso_max, date_iso_min
-    )
-    e = datetime.datetime.now()
-    print str(e-s)
+    try:
+        make_manyrows(
+            filename, rows, dt_iso_max, dt_iso_min,
+            date_iso_max, date_iso_min
+        )
+    except SignalException:
+        pass
+    finally:
+        e = datetime.datetime.now()
+        print str(e-s)
 
 
 def main():
