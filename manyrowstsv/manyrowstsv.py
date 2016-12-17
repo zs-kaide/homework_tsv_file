@@ -50,17 +50,17 @@ class WriteRowsTsv(object):
         int_delta = (delta.days * 24 * 60 * 60) + delta.seconds
         int_date_delta = (date_delta.days * 24 * 60 * 60) + date_delta.seconds
 
-        rdp = random.randint(0, (1 << 32) - 1)
-        random_second = rdp % int_delta
-        randomtime = self.dt_iso_min + datetime.timedelta(
-            seconds=random_second)
-        random_date_second = rdp % int_date_delta
-        randomdatetime = self.date_iso_min + datetime.timedelta(
-            seconds=random_date_second)
         yield "\t".join(
             ["int", "short", "long", "double", "bool",
                 "char", "utf8", "dt_iso8601", "date_iso8601"]) + "\n"
         while 1:
+            rdp = random.randint(0, (1 << 32) - 1)
+            random_second = rdp % int_delta
+            randomtime = self.dt_iso_min + datetime.timedelta(
+                seconds=random_second)
+            random_date_second = rdp % int_date_delta
+            randomdatetime = self.date_iso_min + datetime.timedelta(
+                seconds=random_date_second)
             yield "\t".join(
                 [
                     str(rdp - (1 << 31)),
@@ -84,7 +84,7 @@ class WriteRowsTsv(object):
             fd, temp = tempfile.mkstemp()
             os.close(fd)
             os.chmod(temp, stat.S_IRWXU | stat.S_IROTH)
-            fd = codecs.open(temp, "wb", "utf-8")
+            fd = codecs.open(temp, "wU", "utf-8")
             for row in islice(self.iterows(), self.rows+1):
                 fd.write(row.decode("utf-8"))
             shutil.move(temp, fpath)
