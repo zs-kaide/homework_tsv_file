@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='zs.manyrowstsv',
-    version='1.0.0',
+    version='1.0.1',
     description='Python RandomRowsTsv_Project.',
     packages=find_packages(),
     include_packages_data=True,
