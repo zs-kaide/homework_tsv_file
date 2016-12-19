@@ -16,6 +16,7 @@ setup(
 
     entry_points="""
         [console_scripts]
-        manyrowstsv = manyrowstsv:cmd
+        mktsv = manyrowstsv:cmd
+        pstsv = parselargetsv:cmd
     """,
 )
