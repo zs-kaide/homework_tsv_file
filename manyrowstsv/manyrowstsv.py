@@ -20,7 +20,7 @@ def write_str_into_file(
     iterable,
     output_filename,
 ):
-    with tempfile.NamedTemporaryFile(delete=False) as f:
+    with tempfile.NamedTemporaryFile(delete=False, dir='/var/tmp',) as f:
         for row in iterable:
             f.write(row)
         shutil.move(f.name, output_filename)

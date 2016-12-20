@@ -43,7 +43,7 @@ class ParseRowsTsv(object):
                 yield row
 
     def pickle_tsv(self):
-        with tempfile.NamedTemporaryFile(delete=False) as f:
+        with tempfile.NamedTemporaryFile(delete=False, dir='/var/tmp',) as f:
             for record in self.read_tsv():
                 pickle.dump(record, f)
             shutil.move(f.name, self.outputf)
@@ -51,7 +51,7 @@ class ParseRowsTsv(object):
             os.remove(f.name)
 
     def struct_tsv(self):
-        with tempfile.NamedTemporaryFile(delete=False) as f:
+        with tempfile.NamedTemporaryFile(delete=False, dir='/var/tmp',) as f:
             lines = self.read_tsv()
             line = lines.next()
             inits = struct.Struct(
