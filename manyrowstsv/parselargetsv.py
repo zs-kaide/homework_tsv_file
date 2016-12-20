@@ -8,21 +8,27 @@ import glob
 import logging
 import logging.handlers
 import csv
-import shutil
-import tempfile
 import datetime
 import click
 import pickle
 import struct
+from manyrowstsv import write_str_into_file
 
 
 class ParseRowsTsv(object):
 
     def __init__(
-        self, inputf, outputf
+        self, file, inputf, outputf
             ):
         self.inputf = os.path.abspath(os.path.expanduser(inputf))
         self.outputf = os.path.abspath(os.path.expanduser(outputf))
+        self.file = file
+
+    def write_into_file(self):
+        if self.file == 'pickle':
+            write_str_into_file(self.pickle_tsv(), self.outputf)
+        elif self.file == 'struct':
+            write_str_into_file(self.struct_tsv(), self.outputf)
 
     def read_tsv(self):
         with open(self.inputf, "rb") as f:
@@ -43,32 +49,24 @@ class ParseRowsTsv(object):
                 yield row
 
     def pickle_tsv(self):
-        with tempfile.NamedTemporaryFile(delete=False, dir='/var/tmp',) as f:
-            for record in self.read_tsv():
-                pickle.dump(record, f)
-            shutil.move(f.name, self.outputf)
-        if os.path.exists(f.name):
-            os.remove(f.name)
+        for record in self.read_tsv():
+            yield pickle.dumps(record)
 
     def struct_tsv(self):
-        with tempfile.NamedTemporaryFile(delete=False, dir='/var/tmp',) as f:
-            lines = self.read_tsv()
-            line = lines.next()
-            inits = struct.Struct(
-                's '.join(
-                    [str(len(line[i])) for i in range(9)]) + 's')
-            f.write(inits.pack(*line))
-            for record in lines:
-                s = struct.Struct(
-                    'i h l d ? %ds %ds %ds %ds' % (
-                        len(record[5]), len(record[6]),
-                        len(record[7]), len(record[8]),
-                        )
+        lines = self.read_tsv()
+        line = lines.next()
+        inits = struct.Struct(
+            's '.join(
+                [str(len(line[i])) for i in range(9)]) + 's')
+        yield inits.pack(*line)
+        for record in lines:
+            s = struct.Struct(
+                'i h l d ? %ds %ds %ds %ds' % (
+                    len(record[5]), len(record[6]),
+                    len(record[7]), len(record[8]),
                     )
-                f.write(s.pack(*record))
-            shutil.move(f.name, self.outputf)
-        if os.path.exists(f.name):
-            os.remove(f.name)
+                )
+            yield s.pack(*record)
 
 
 class SignalException(Exception):
@@ -101,12 +99,10 @@ def cmd(file, inputf, outputf):
         LOG_MANYROWSTSV, maxBytes=2000, backupCount=5,)
     my_logger.addHandler(handler)
 
-    parser = ParseRowsTsv(inputf, outputf)
+    parser = ParseRowsTsv(file, inputf, outputf)
+
     try:
-        if file == 'pickle':
-            parser.pickle_tsv()
-        elif file == 'struct':
-            parser.struct_tsv()
+        parser.write_into_file()
 
     except SignalException as e1:
         my_logger.warning('%s: %s' % (e1, datetime.datetime.now()))
